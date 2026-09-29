@@ -12,17 +12,41 @@
     .card { height:100dvh; scroll-snap-align:start; position:relative; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; background:#1c140c; }
     .card img.scene { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.48) contrast(1.15) saturate(0.75); }
     .card::after { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(12,10,9,0.94) 0%, rgba(12,10,9,0.4) 48%, rgba(12,10,9,0.18) 100%); }
-    .content { position:relative; z-index:2; padding:1.5rem 1.25rem 2.75rem; }
+    .content { position:relative; z-index:2; padding:1.5rem 1.25rem 3.4rem; }
     .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; font-family:system-ui,sans-serif; }
     .verse { font-size:1.32rem; line-height:1.55; }
     header { position:fixed; top:0; left:0; right:0; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:0.75rem 1rem; background:linear-gradient(to bottom, rgba(12,10,9,0.75), transparent); font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
-    .hint { position:fixed; bottom:0.55rem; left:0; right:0; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; }
+    .hint { position:fixed; bottom:0.55rem; left:0; right:4.2rem; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; }
+    #share {
+      position:fixed; right:0.85rem; bottom:0.85rem; z-index:12;
+      width:2.55rem; height:2.55rem; border:0; border-radius:999px;
+      background:rgba(12,10,9,0.72); color:var(--gold);
+      display:flex; align-items:center; justify-content:center;
+      backdrop-filter:blur(8px);
+      box-shadow:0 0 0 1px rgba(212,160,23,0.35);
+    }
+    #share svg { width:1.15rem; height:1.15rem; }
+    #toast {
+      position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px);
+      z-index:20; opacity:0; pointer-events:none;
+      font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase;
+      color:var(--bg); background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px;
+      transition:opacity .2s, transform .2s;
+    }
+    #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
   <header><span>Scripture Scroll</span><span id="progress">KJV · random</span></header>
   <div id="feed"></div>
   <div class="hint">swipe · no end</div>
+  <button id="share" type="button" aria-label="Share verse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/>
+      <path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/>
+    </svg>
+  </button>
+  <div id="toast">copied</div>
   <script>
     const BOOKS = [
       ["genesis","Genesis",50],["exodus","Exodus",40],["leviticus","Leviticus",27],
@@ -67,6 +91,7 @@
     }
     const feed = document.getElementById("feed");
     const progress = document.getElementById("progress");
+    const toast = document.getElementById("toast");
     let buffer=[], loading=false, shown=0;
     let deck = [];
     let lastSlug = "";
@@ -110,11 +135,46 @@
     function makeCard(item){
       const card = document.createElement("div");
       card.className = "card";
+      card.dataset.ref = item.ref;
+      card.dataset.text = item.text;
       card.innerHTML =
         '<img class="scene" alt="" src="'+coverUrl(item.slug)+'" data-slug="'+item.slug+'" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=coverFallback(this.dataset.slug);}else{this.style.display=\'none\';}">' +
         '<div class="content"><div class="ref">'+item.ref+'</div><p class="verse">'+item.text+'</p></div>';
       return card;
     }
+    function visibleCard(){
+      const cards = feed.children;
+      let best = cards[0];
+      let bestDist = Infinity;
+      for(const c of cards){
+        const d = Math.abs(c.getBoundingClientRect().top);
+        if(d < bestDist){ bestDist = d; best = c; }
+      }
+      return best;
+    }
+    function flash(msg){
+      toast.textContent = msg;
+      toast.classList.add("on");
+      setTimeout(()=>toast.classList.remove("on"), 1400);
+    }
+    async function shareCurrent(){
+      const card = visibleCard();
+      if(!card || !card.dataset.ref) return;
+      const payload = card.dataset.ref + " (KJV)\n" + card.dataset.text + "\n" + location.href;
+      try {
+        if(navigator.share){
+          await navigator.share({ title: card.dataset.ref + " — KJV", text: payload });
+        } else {
+          await navigator.clipboard.writeText(payload);
+          flash("copied");
+        }
+      } catch(e){
+        if(e && e.name === "AbortError") return;
+        try { await navigator.clipboard.writeText(payload); flash("copied"); }
+        catch(_){ flash("could not share"); }
+      }
+    }
+    document.getElementById("share").addEventListener("click", shareCurrent);
     async function appendCards(n){
       await fillBuffer();
       for(let i=0;i<n && buffer.length;i++){ feed.appendChild(makeCard(buffer.shift())); shown++; }
