@@ -57,12 +57,27 @@
       const id = BOOK_COVER[slug] || "photo-1473580044384-7ba9967e16a0";
       return "https://images.unsplash.com/"+id+"?auto=format&fit=crop&w=900&h=1600&q=70";
     }
+    function shuffle(arr){
+      const a = arr.slice();
+      for(let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        const t=a[i]; a[i]=a[j]; a[j]=t;
+      }
+      return a;
+    }
     const feed = document.getElementById("feed");
     const progress = document.getElementById("progress");
     let buffer=[], loading=false, shown=0;
+    let deck = [];
+    let lastSlug = "";
     const seen = new Set();
-    function pickBookChapter(){
-      const b = BOOKS[Math.floor(Math.random()*BOOKS.length)];
+    function nextBook(){
+      if(!deck.length){
+        deck = shuffle(BOOKS);
+        if(deck.length > 1 && deck[0][0] === lastSlug) deck.push(deck.shift());
+      }
+      const b = deck.shift();
+      lastSlug = b[0];
       return { slug:b[0], name:b[1], ch: 1+Math.floor(Math.random()*b[2]) };
     }
     async function fetchChapter(slug,ch){
@@ -76,20 +91,18 @@
       loading = true;
       let attempts = 0;
       try {
-        while(buffer.length < 10 && attempts < 8){
+        while(buffer.length < 8 && attempts < 12){
           attempts++;
-          const pick = pickBookChapter();
+          const pick = nextBook();
           const verses = await fetchChapter(pick.slug, pick.ch);
           if(!verses.length) continue;
-          const shuffled = verses.sort(()=>Math.random()-0.5).slice(0,2);
-          for(const v of shuffled){
-            const key = pick.name+":"+pick.ch+":"+v.v;
-            if(seen.has(key)) continue;
-            seen.add(key);
-            const text = (v.t||"").trim();
-            if(!text) continue;
-            buffer.push({ ref: pick.name+" "+pick.ch+":"+v.v, text, slug: pick.slug, book: pick.name });
-          }
+          const v = verses[Math.floor(Math.random()*verses.length)];
+          const key = pick.name+":"+pick.ch+":"+v.v;
+          if(seen.has(key)) continue;
+          seen.add(key);
+          const text = (v.t||"").trim();
+          if(!text) continue;
+          buffer.push({ ref: pick.name+" "+pick.ch+":"+v.v, text, slug: pick.slug, book: pick.name });
         }
       } catch(e){ console.error(e); }
       loading = false;
@@ -110,9 +123,9 @@
     feed.addEventListener("scroll", ()=>{
       const last = feed.lastElementChild;
       if(!last) return;
-      if(last.getBoundingClientRect().top < window.innerHeight*2.2) appendCards(6);
+      if(last.getBoundingClientRect().top < window.innerHeight*2.2) appendCards(4);
     });
-    appendCards(8);
+    appendCards(6);
   </script>
 </body>
 </html>
