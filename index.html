@@ -12,18 +12,32 @@
   <link rel="apple-touch-icon" href="icon.svg">
   <title>Scripture Scroll</title>
   <style>
-    :root { --bg:#0c0a09; --gold:#d4a017; --text:#faf7f2; --muted:#a8a29e; }
+    :root { --bg:#000; --gold:#d4a017; --text:#faf7f2; --muted:#a8a29e; }
     * { box-sizing:border-box; margin:0; padding:0; }
-    html, body { height:100%; background:var(--bg); color:var(--text); font-family:Georgia,"Times New Roman",serif; overflow:hidden; }
+    html, body { height:100%; background:#000; color:var(--text); font-family:Georgia,"Times New Roman",serif; overflow:hidden; }
     #feed { height:100dvh; overflow-y:scroll; scroll-snap-type:y mandatory; -webkit-overflow-scrolling:touch; }
-    .card { height:100dvh; scroll-snap-align:start; position:relative; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; background:#1c140c; }
-    .card img.scene { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.48) contrast(1.15) saturate(0.75); }
-    .card::after { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(12,10,9,0.94) 0%, rgba(12,10,9,0.4) 48%, rgba(12,10,9,0.18) 100%); }
-    .content { position:relative; z-index:2; padding:5.6rem 1.25rem 3.6rem; }
-    .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; font-family:system-ui,sans-serif; }
+    .card {
+      height:100dvh; scroll-snap-align:start; position:relative;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      overflow:hidden; background:#000; padding:5.2rem 0 4.2rem;
+    }
+    .card img.scene {
+      position:relative; inset:auto;
+      width:min(86vw, 420px);
+      max-height:56dvh;
+      height:auto;
+      aspect-ratio:1 / 1;
+      object-fit:contain;
+      background:#000;
+      filter:none;
+      box-shadow:0 16px 48px rgba(0,0,0,0.55);
+    }
+    .card::after { display:none; }
+    .content { position:relative; z-index:2; width:min(86vw, 420px); padding:0.9rem 0.15rem 0; }
+    .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; font-family:system-ui,sans-serif; }
     .badge { display:inline-block; margin-left:0.5rem; font-size:0.58rem; letter-spacing:0.16em; color:var(--muted); }
-    .verse { font-size:1.22rem; line-height:1.5; }
-    header { position:fixed; top:0; left:0; right:0; z-index:10; padding:0.65rem 1rem 0.35rem; background:linear-gradient(to bottom, rgba(12,10,9,0.82), transparent); font-family:system-ui,sans-serif; color:var(--muted); transition:opacity .2s; }
+    .verse { font-size:1.12rem; line-height:1.5; }
+    header { position:fixed; top:0; left:0; right:0; z-index:10; padding:0.65rem 1rem 0.35rem; background:linear-gradient(to bottom, rgba(0,0,0,0.88), transparent); font-family:system-ui,sans-serif; color:var(--muted); transition:opacity .2s; }
     .top { display:flex; justify-content:space-between; align-items:center; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; }
     .chips { display:flex; gap:0.35rem; overflow-x:auto; padding:0.45rem 0 0.2rem; scrollbar-width:none; }
     .chips::-webkit-scrollbar { display:none; }
@@ -38,14 +52,14 @@
     #share { right:0.85rem; bottom:0.85rem; }
     .fab svg { width:1.15rem; height:1.15rem; }
     #save.on { color:#faf7f2; background:rgba(212,160,23,0.28); }
-    #toast { position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px); z-index:20; opacity:0; pointer-events:none; font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--bg); background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px; transition:opacity .2s, transform .2s; }
+    #toast { position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px); z-index:20; opacity:0; pointer-events:none; font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:#000; background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px; transition:opacity .2s, transform .2s; }
     #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
     body.linger header, body.linger .hint, body.linger .fab { opacity:0; pointer-events:none; }
-    #sheet { position:fixed; inset:0; z-index:30; display:none; background:rgba(12,10,9,0.72); }
+    #sheet { position:fixed; inset:0; z-index:30; display:none; background:rgba(0,0,0,0.72); }
     #sheet.open { display:block; }
-    #sheet .panel { position:absolute; left:0; right:0; bottom:0; max-height:78dvh; background:#161210; border-top:1px solid rgba(212,160,23,0.28); padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column; }
+    #sheet .panel { position:absolute; left:0; right:0; bottom:0; max-height:78dvh; background:#111; border-top:1px solid rgba(212,160,23,0.28); padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column; }
     #sheet h2 { font:600 0.68rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; }
-    #bookq { width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem; background:#0c0a09; color:var(--text); font:1rem Georgia,serif; box-shadow:0 0 0 1px rgba(168,162,158,0.25); }
+    #bookq { width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem; background:#000; color:var(--text); font:1rem Georgia,serif; box-shadow:0 0 0 1px rgba(168,162,158,0.25); }
     #booklist { overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch; }
     #booklist button { display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--text); font:1rem Georgia,serif; padding:0.55rem 0.15rem; border-bottom:1px solid rgba(250,247,242,0.06); }
     #booklist button.here { color:var(--gold); }
