@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0c0a09">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Scripture">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <title>Scripture Scroll</title>
   <style>
     :root { --bg:#0c0a09; --gold:#d4a017; --text:#faf7f2; --muted:#a8a29e; }
@@ -12,199 +19,55 @@
     .card { height:100dvh; scroll-snap-align:start; position:relative; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; background:#1c140c; }
     .card img.scene { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.48) contrast(1.15) saturate(0.75); }
     .card::after { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(12,10,9,0.94) 0%, rgba(12,10,9,0.4) 48%, rgba(12,10,9,0.18) 100%); }
-    .content { position:relative; z-index:2; padding:1.5rem 1.25rem 3.4rem; }
+    .content { position:relative; z-index:2; padding:5.6rem 1.25rem 3.6rem; }
     .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; font-family:system-ui,sans-serif; }
+    .badge { display:inline-block; margin-left:0.5rem; font-size:0.58rem; letter-spacing:0.16em; color:var(--muted); }
     .verse { font-size:1.22rem; line-height:1.5; }
-    header { position:fixed; top:0; left:0; right:0; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:0.75rem 1rem; background:linear-gradient(to bottom, rgba(12,10,9,0.75), transparent); font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
-    .hint { position:fixed; bottom:0.55rem; left:0; right:4.2rem; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; }
-    #share {
-      position:fixed; right:0.85rem; bottom:0.85rem; z-index:12;
-      width:2.55rem; height:2.55rem; border:0; border-radius:999px;
-      background:rgba(12,10,9,0.72); color:var(--gold);
-      display:flex; align-items:center; justify-content:center;
-      backdrop-filter:blur(8px);
-      box-shadow:0 0 0 1px rgba(212,160,23,0.35);
-    }
-    #share svg { width:1.15rem; height:1.15rem; }
-    #toast {
-      position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px);
-      z-index:20; opacity:0; pointer-events:none;
-      font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase;
-      color:var(--bg); background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px;
-      transition:opacity .2s, transform .2s;
-    }
+    header { position:fixed; top:0; left:0; right:0; z-index:10; padding:0.65rem 1rem 0.35rem; background:linear-gradient(to bottom, rgba(12,10,9,0.82), transparent); font-family:system-ui,sans-serif; color:var(--muted); transition:opacity .2s; }
+    .top { display:flex; justify-content:space-between; align-items:center; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; }
+    .chips { display:flex; gap:0.35rem; overflow-x:auto; padding:0.45rem 0 0.2rem; scrollbar-width:none; }
+    .chips::-webkit-scrollbar { display:none; }
+    .chip { flex:0 0 auto; border:0; border-radius:999px; padding:0.28rem 0.55rem; background:rgba(12,10,9,0.45); color:var(--muted); font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.12em; text-transform:uppercase; box-shadow:0 0 0 1px rgba(168,162,158,0.25); }
+    .chip.on { color:var(--gold); box-shadow:0 0 0 1px rgba(212,160,23,0.55); }
+    a.chip { text-decoration:none; display:inline-flex; align-items:center; }
+    .hint { position:fixed; bottom:0.55rem; left:3.6rem; right:3.6rem; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; transition:opacity .2s; }
+    .fab { position:fixed; z-index:12; width:2.55rem; height:2.55rem; border:0; border-radius:999px; background:rgba(12,10,9,0.72); color:var(--gold); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); box-shadow:0 0 0 1px rgba(212,160,23,0.35); transition:opacity .2s; }
+    #save { left:0.85rem; bottom:0.85rem; }
+    #share { right:0.85rem; bottom:0.85rem; }
+    .fab svg { width:1.15rem; height:1.15rem; }
+    #save.on { color:#faf7f2; background:rgba(212,160,23,0.28); }
+    #toast { position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px); z-index:20; opacity:0; pointer-events:none; font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--bg); background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px; transition:opacity .2s, transform .2s; }
     #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+    body.linger header, body.linger .hint, body.linger .fab { opacity:0; pointer-events:none; }
   </style>
 </head>
 <body>
-  <header><span>Scripture Scroll</span><span id="progress">KJV · random</span></header>
+  <header>
+    <div class="top"><span>Scripture Scroll</span><span id="progress">KJV</span></div>
+    <div class="chips" id="modes">
+      <button class="chip on" data-mode="shuffle" type="button">Shuffle</button>
+      <button class="chip" data-mode="path" type="button">Path</button>
+      <button class="chip" data-mode="saves" type="button">Saved</button>
+      <a class="chip" href="https://bible.usccb.org/daily-bible-reading" target="_blank" rel="noopener">Lectionary</a>
+    </div>
+    <div class="chips" id="moods">
+      <button class="chip on" data-mood="all" type="button">All</button>
+      <button class="chip" data-mood="lament" type="button">Lament</button>
+      <button class="chip" data-mood="promise" type="button">Promise</button>
+      <button class="chip" data-mood="command" type="button">Command</button>
+      <button class="chip" data-mood="gospel" type="button">Gospel</button>
+      <button class="chip" data-mood="wisdom" type="button">Wisdom</button>
+    </div>
+  </header>
   <div id="feed"></div>
-  <div class="hint">swipe · no end</div>
-  <button id="share" type="button" aria-label="Share verse">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/>
-      <path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/>
-    </svg>
+  <div class="hint" id="hint">swipe · hold to linger</div>
+  <button id="save" class="fab" type="button" aria-label="Save verse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+  </button>
+  <button id="share" class="fab" type="button" aria-label="Share verse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
   </button>
   <div id="toast">copied</div>
-  <script>
-    const BOOKS = [
-      ["genesis","Genesis",50],["exodus","Exodus",40],["leviticus","Leviticus",27],
-      ["numbers","Numbers",36],["deuteronomy","Deuteronomy",34],["joshua","Joshua",24],
-      ["judges","Judges",21],["ruth","Ruth",4],["1-samuel","1 Samuel",31],
-      ["2-samuel","2 Samuel",24],["1-kings","1 Kings",22],["2-kings","2 Kings",25],
-      ["1-chronicles","1 Chronicles",29],["2-chronicles","2 Chronicles",36],
-      ["ezra","Ezra",10],["nehemiah","Nehemiah",13],["esther","Esther",10],
-      ["job","Job",42],["psalms","Psalms",150],["proverbs","Proverbs",31],
-      ["ecclesiastes","Ecclesiastes",12],["song-of-solomon","Song of Solomon",8],
-      ["isaiah","Isaiah",66],["jeremiah","Jeremiah",52],["lamentations","Lamentations",5],
-      ["ezekiel","Ezekiel",48],["daniel","Daniel",12],["hosea","Hosea",14],
-      ["joel","Joel",3],["amos","Amos",9],["obadiah","Obadiah",1],
-      ["jonah","Jonah",4],["micah","Micah",7],["nahum","Nahum",3],
-      ["habakkuk","Habakkuk",3],["zephaniah","Zephaniah",3],["haggai","Haggai",2],
-      ["zechariah","Zechariah",14],["malachi","Malachi",4],
-      ["matthew","Matthew",28],["mark","Mark",16],["luke","Luke",24],
-      ["john","John",21],["acts","Acts",28],["romans","Romans",16],
-      ["1-corinthians","1 Corinthians",16],["2-corinthians","2 Corinthians",13],
-      ["galatians","Galatians",6],["ephesians","Ephesians",6],
-      ["philippians","Philippians",4],["colossians","Colossians",4],
-      ["1-thessalonians","1 Thessalonians",5],["2-thessalonians","2 Thessalonians",3],
-      ["1-timothy","1 Timothy",6],["2-timothy","2 Timothy",4],["titus","Titus",3],
-      ["philemon","Philemon",1],["hebrews","Hebrews",13],["james","James",5],
-      ["1-peter","1 Peter",5],["2-peter","2 Peter",3],["1-john","1 John",5],
-      ["2-john","2 John",1],["3-john","3 John",1],["jude","Jude",1],
-      ["revelation","Revelation",22]
-    ];
-    const BOOK_COVER = {"genesis":"photo-1441974230815-cc6e0d4b3b3a","exodus":"photo-1473580044384-7ba9967e16a0","leviticus":"photo-1518684079-3c830dcef090","numbers":"photo-1509316785289-025f5b846b35","deuteronomy":"photo-1469474968028-56623f02e42e","joshua":"photo-1506905925346-21bda4d32df4","judges":"photo-1464822759023-fed622ff2c3b","ruth":"photo-1464226184884-fa280b87c399","1-samuel":"photo-1482192505345-5656af4ab2b4","2-samuel":"photo-1470071459604-3b5ec3a7fe05","1-kings":"photo-1552832230-c0197dd311b5","2-kings":"photo-1542401889-2edc1e369b0c","1-chronicles":"photo-1500534314209-a25ddb2bd429","2-chronicles":"photo-1472214103451-9374bd1c798e","ezra":"photo-1514565131-fce0801d0b52","nehemiah":"photo-1511818966892-d7d671e672a2","esther":"photo-1519681393784-d120267933ba","job":"photo-1419242902214-272b3f66ee7a","psalms":"photo-1507525428034-b723cf961d3e","proverbs":"photo-1447752877765-59780d0d04f2","ecclesiastes":"photo-1493246507130-2bbda1f8871f","song-of-solomon":"photo-1462275646964-a0e33847b0a0","isaiah":"photo-1483728642387-6c3bdd17e60","jeremiah":"photo-1470116945706-e6bf5d5a76ca","lamentations":"photo-1478760329108-5c3ed9d495a0","ezekiel":"photo-1534445867742-43195f401b6c","daniel":"photo-1518837695005-2083093ee35b","hosea":"photo-1500530855697-b586d89ba3ee","joel":"photo-1502082553048-f009c37129b9","amos":"photo-1470252640268-40c871d0280a","obadiah":"photo-1426604966848-d7adac402bff","jonah":"photo-1439066619973-11c14eec78d1","micah":"photo-1501785888041-af3ef285b470","nahum":"photo-1475924156734-496f6cac6ec1","habakkuk":"photo-1418065460487-3e41a6c84dc5","zephaniah":"photo-1444080744255-d19ae4c5e38c","haggai":"photo-1482192505345-5656af4ab2b4","zechariah":"photo-1495616811223-4d98c6e9c869","malachi":"photo-1414609245224-afa02bfb3fda","matthew":"photo-1500534314209-a25ddb2bd429","mark":"photo-1507525428034-b723cf961d3e","luke":"photo-1464226184884-fa280b87c399","john":"photo-1419242902214-272b3f66ee7a","acts":"photo-1469474968028-56623f02e42e","romans":"photo-1473580044384-7ba9967e16a0","1-corinthians":"photo-1509316785289-025f5b846b35","2-corinthians":"photo-1506905925346-21bda4d32df4","galatians":"photo-1464822759023-fed622ff2c3b","ephesians":"photo-1519681393784-d120267933ba","philippians":"photo-1447752877765-59780d0d04f2","colossians":"photo-1472214103451-9374bd1c798e","1-thessalonians":"photo-1502082553048-f009c37129b9","2-thessalonians":"photo-1426604966848-d7adac402bff","1-timothy":"photo-1501785888041-af3ef285b470","2-timothy":"photo-1475924156734-496f6cac6ec1","titus":"photo-1418065460487-3e41a6c84dc5","philemon":"photo-1444080744255-d19ae4c5e38c","hebrews":"photo-1518684079-3c830dcef090","james":"photo-1470252640268-40c871d0280a","1-peter":"photo-1439066619973-11c14eec78d1","2-peter":"photo-1493246507130-2bbda1f8871f","1-john":"photo-1518837695005-2083093ee35b","2-john":"photo-1470116945706-e6bf5d5a76ca","3-john":"photo-1478760329108-5c3ed9d495a0","jude":"photo-1534445867742-43195f401b6c","revelation":"photo-1419242902214-272b3f66ee7a"};
-    const MAX_SPAN = 5;
-    function coverUrl(slug){ return "covers/"+slug+".jpg"; }
-    function coverFallback(slug){
-      const id = BOOK_COVER[slug] || "photo-1473580044384-7ba9967e16a0";
-      return "https://images.unsplash.com/"+id+"?auto=format&fit=crop&w=900&h=1600&q=70";
-    }
-    function shuffle(arr){
-      const a = arr.slice();
-      for(let i=a.length-1;i>0;i--){
-        const j = Math.floor(Math.random()*(i+1));
-        const t=a[i]; a[i]=a[j]; a[j]=t;
-      }
-      return a;
-    }
-    function verseText(v){ return String((v && v.t) || "").replace(/\s+/g," ").trim(); }
-    function endsSentence(s){ return /[.!?]["']?$/.test(s); }
-    function completeSpan(verses, idx){
-      let start = idx, end = idx;
-      while(start > 0 && (end - start + 1) < MAX_SPAN && !endsSentence(verseText(verses[start-1]))) start--;
-      while(end < verses.length-1 && (end - start + 1) < MAX_SPAN && !endsSentence(verseText(verses[end]))) end++;
-      const parts = [];
-      for(let i=start;i<=end;i++){
-        const t = verseText(verses[i]);
-        if(t) parts.push(t);
-      }
-      const a = verses[start].v;
-      const b = verses[end].v;
-      return { text: parts.join(" "), v1:a, v2:b };
-    }
-    const feed = document.getElementById("feed");
-    const progress = document.getElementById("progress");
-    const toast = document.getElementById("toast");
-    let buffer=[], loading=false, shown=0;
-    let deck = [];
-    let lastSlug = "";
-    const seen = new Set();
-    function nextBook(){
-      if(!deck.length){
-        deck = shuffle(BOOKS);
-        if(deck.length > 1 && deck[0][0] === lastSlug) deck.push(deck.shift());
-      }
-      const b = deck.shift();
-      lastSlug = b[0];
-      return { slug:b[0], name:b[1], ch: 1+Math.floor(Math.random()*b[2]) };
-    }
-    async function fetchChapter(slug,ch){
-      const res = await fetch("https://free.bible/bible/kjv/"+slug+"/"+ch+".json");
-      if(!res.ok) return [];
-      const data = await res.json();
-      return data.verses || [];
-    }
-    async function fillBuffer(){
-      if(loading) return;
-      loading = true;
-      let attempts = 0;
-      try {
-        while(buffer.length < 8 && attempts < 12){
-          attempts++;
-          const pick = nextBook();
-          const verses = await fetchChapter(pick.slug, pick.ch);
-          if(!verses.length) continue;
-          const idx = Math.floor(Math.random()*verses.length);
-          const span = completeSpan(verses, idx);
-          if(!span.text) continue;
-          const key = pick.name+":"+pick.ch+":"+span.v1+"-"+span.v2;
-          if(seen.has(key)) continue;
-          seen.add(key);
-          const ref = span.v1 === span.v2
-            ? pick.name+" "+pick.ch+":"+span.v1
-            : pick.name+" "+pick.ch+":"+span.v1+"–"+span.v2;
-          buffer.push({ ref, text: span.text, slug: pick.slug, book: pick.name });
-        }
-      } catch(e){ console.error(e); }
-      loading = false;
-    }
-    function makeCard(item){
-      const card = document.createElement("div");
-      card.className = "card";
-      card.dataset.ref = item.ref;
-      card.dataset.text = item.text;
-      card.innerHTML =
-        '<img class="scene" alt="" src="'+coverUrl(item.slug)+'" data-slug="'+item.slug+'" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=coverFallback(this.dataset.slug);}else{this.style.display=\'none\';}">' +
-        '<div class="content"><div class="ref">'+item.ref+'</div><p class="verse">'+item.text+'</p></div>';
-      return card;
-    }
-    function visibleCard(){
-      const cards = feed.children;
-      let best = cards[0];
-      let bestDist = Infinity;
-      for(const c of cards){
-        const d = Math.abs(c.getBoundingClientRect().top);
-        if(d < bestDist){ bestDist = d; best = c; }
-      }
-      return best;
-    }
-    function flash(msg){
-      toast.textContent = msg;
-      toast.classList.add("on");
-      setTimeout(()=>toast.classList.remove("on"), 1400);
-    }
-    async function shareCurrent(){
-      const card = visibleCard();
-      if(!card || !card.dataset.ref) return;
-      const payload = card.dataset.ref + " (KJV)\n" + card.dataset.text + "\n" + location.href;
-      try {
-        if(navigator.share){
-          await navigator.share({ title: card.dataset.ref + " — KJV", text: payload });
-        } else {
-          await navigator.clipboard.writeText(payload);
-          flash("copied");
-        }
-      } catch(e){
-        if(e && e.name === "AbortError") return;
-        try { await navigator.clipboard.writeText(payload); flash("copied"); }
-        catch(_){ flash("could not share"); }
-      }
-    }
-    document.getElementById("share").addEventListener("click", shareCurrent);
-    async function appendCards(n){
-      await fillBuffer();
-      for(let i=0;i<n && buffer.length;i++){ feed.appendChild(makeCard(buffer.shift())); shown++; }
-      progress.textContent = "KJV · "+shown+" drawn";
-    }
-    feed.addEventListener("scroll", ()=>{
-      const last = feed.lastElementChild;
-      if(!last) return;
-      if(last.getBoundingClientRect().top < window.innerHeight*2.2) appendCards(4);
-    });
-    appendCards(6);
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
