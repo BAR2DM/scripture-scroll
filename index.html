@@ -17,7 +17,11 @@
     html, body { height:100%; background:var(--bg); color:var(--text); font-family:Georgia,"Times New Roman",serif; overflow:hidden; }
     #feed { height:100dvh; overflow-y:scroll; scroll-snap-type:y mandatory; -webkit-overflow-scrolling:touch; }
     .card { height:100dvh; scroll-snap-align:start; position:relative; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; background:#1c140c; }
-    .card img.scene { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.48) contrast(1.15) saturate(0.75); }
+    .card img.scene {
+      position:absolute; left:0; right:0; bottom:0; width:100%; height:118%;
+      object-fit:cover; object-position:center 72%;
+      filter:brightness(0.48) contrast(1.15) saturate(0.75);
+    }
     .card::after { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(12,10,9,0.94) 0%, rgba(12,10,9,0.4) 48%, rgba(12,10,9,0.18) 100%); }
     .content { position:relative; z-index:2; padding:5.6rem 1.25rem 3.6rem; }
     .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; font-family:system-ui,sans-serif; }
@@ -41,28 +45,13 @@
     #toast { position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px); z-index:20; opacity:0; pointer-events:none; font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--bg); background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px; transition:opacity .2s, transform .2s; }
     #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
     body.linger header, body.linger .hint, body.linger .fab { opacity:0; pointer-events:none; }
-    #sheet {
-      position:fixed; inset:0; z-index:30; display:none;
-      background:rgba(12,10,9,0.72);
-    }
+    #sheet { position:fixed; inset:0; z-index:30; display:none; background:rgba(12,10,9,0.72); }
     #sheet.open { display:block; }
-    #sheet .panel {
-      position:absolute; left:0; right:0; bottom:0; max-height:78dvh;
-      background:#161210; border-top:1px solid rgba(212,160,23,0.28);
-      padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column;
-    }
+    #sheet .panel { position:absolute; left:0; right:0; bottom:0; max-height:78dvh; background:#161210; border-top:1px solid rgba(212,160,23,0.28); padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column; }
     #sheet h2 { font:600 0.68rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; }
-    #bookq {
-      width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem;
-      background:#0c0a09; color:var(--text); font:1rem Georgia,serif;
-      box-shadow:0 0 0 1px rgba(168,162,158,0.25);
-    }
+    #bookq { width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem; background:#0c0a09; color:var(--text); font:1rem Georgia,serif; box-shadow:0 0 0 1px rgba(168,162,158,0.25); }
     #booklist { overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch; }
-    #booklist button {
-      display:block; width:100%; text-align:left; border:0; background:transparent;
-      color:var(--text); font:1rem Georgia,serif; padding:0.55rem 0.15rem;
-      border-bottom:1px solid rgba(250,247,242,0.06);
-    }
+    #booklist button { display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--text); font:1rem Georgia,serif; padding:0.55rem 0.15rem; border-bottom:1px solid rgba(250,247,242,0.06); }
     #booklist button.here { color:var(--gold); }
     #booklist .grp { font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); padding:0.85rem 0 0.3rem; }
   </style>
