@@ -30,6 +30,8 @@
     .chip { flex:0 0 auto; border:0; border-radius:999px; padding:0.28rem 0.55rem; background:rgba(12,10,9,0.45); color:var(--muted); font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.12em; text-transform:uppercase; box-shadow:0 0 0 1px rgba(168,162,158,0.25); }
     .chip.on { color:var(--gold); box-shadow:0 0 0 1px rgba(212,160,23,0.55); }
     a.chip { text-decoration:none; display:inline-flex; align-items:center; }
+    .path-only { display:none; }
+    body.path-on .path-only { display:inline-flex; }
     .hint { position:fixed; bottom:0.55rem; left:3.6rem; right:3.6rem; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; transition:opacity .2s; }
     .fab { position:fixed; z-index:12; width:2.55rem; height:2.55rem; border:0; border-radius:999px; background:rgba(12,10,9,0.72); color:var(--gold); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); box-shadow:0 0 0 1px rgba(212,160,23,0.35); transition:opacity .2s; }
     #save { left:0.85rem; bottom:0.85rem; }
@@ -39,6 +41,30 @@
     #toast { position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px); z-index:20; opacity:0; pointer-events:none; font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--bg); background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px; transition:opacity .2s, transform .2s; }
     #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
     body.linger header, body.linger .hint, body.linger .fab { opacity:0; pointer-events:none; }
+    #sheet {
+      position:fixed; inset:0; z-index:30; display:none;
+      background:rgba(12,10,9,0.72);
+    }
+    #sheet.open { display:block; }
+    #sheet .panel {
+      position:absolute; left:0; right:0; bottom:0; max-height:78dvh;
+      background:#161210; border-top:1px solid rgba(212,160,23,0.28);
+      padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column;
+    }
+    #sheet h2 { font:600 0.68rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; }
+    #bookq {
+      width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem;
+      background:#0c0a09; color:var(--text); font:1rem Georgia,serif;
+      box-shadow:0 0 0 1px rgba(168,162,158,0.25);
+    }
+    #booklist { overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch; }
+    #booklist button {
+      display:block; width:100%; text-align:left; border:0; background:transparent;
+      color:var(--text); font:1rem Georgia,serif; padding:0.55rem 0.15rem;
+      border-bottom:1px solid rgba(250,247,242,0.06);
+    }
+    #booklist button.here { color:var(--gold); }
+    #booklist .grp { font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); padding:0.85rem 0 0.3rem; }
   </style>
 </head>
 <body>
@@ -47,6 +73,9 @@
     <div class="chips" id="modes">
       <button class="chip on" data-mode="shuffle" type="button">Shuffle</button>
       <button class="chip" data-mode="path" type="button">Path</button>
+      <button class="chip path-only" id="jump" type="button">Jump</button>
+      <button class="chip path-only" id="prevbook" type="button">Prev book</button>
+      <button class="chip path-only" id="nextbook" type="button">Next book</button>
       <button class="chip" data-mode="saves" type="button">Saved</button>
       <a class="chip" href="https://bible.usccb.org/daily-bible-reading" target="_blank" rel="noopener">Lectionary</a>
     </div>
@@ -67,7 +96,15 @@
   <button id="share" class="fab" type="button" aria-label="Share verse">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
   </button>
+  <div id="sheet">
+    <div class="panel">
+      <h2>Start path at</h2>
+      <input id="bookq" type="search" placeholder="Search books" autocomplete="off">
+      <div id="booklist"></div>
+    </div>
+  </div>
   <div id="toast">copied</div>
   <script src="app.js"></script>
+  <script src="path-jump.js"></script>
 </body>
 </html>
