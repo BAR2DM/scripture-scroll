@@ -1,0 +1,17 @@
+{
+  "name": "Scripture Scroll",
+  "short_name": "Scripture",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0c0a09",
+  "theme_color": "#0c0a09",
+  "description": "Random KJV verses, one book at a time.",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
