@@ -5,6 +5,7 @@ function jumpToBook(i){
   if(i < 0) i = BOOKS.length - 1;
   if(i >= BOOKS.length) i = 0;
   path = { i: i, ch: 1, idx: 0 };
+  back = { i: i, ch: 1, before: 0 };
   save(LS.path, path);
   closeSheet();
   if(mode !== "path"){
@@ -51,9 +52,67 @@ function openSheet(){
   document.getElementById("sheet").classList.add("open");
   setTimeout(function(){ document.getElementById("bookq").focus(); }, 50);
 }
+function parseRef(ref){
+  const m = String(ref || "").match(/(\d+):(\d+)(?:[\u2013-](\d+))?/);
+  if(!m) return { ch: 1, v1: 1, v2: 1 };
+  return { ch: +m[1], v1: +m[2], v2: m[3] ? +m[3] : +m[2] };
+}
+let back = null;
+let prepending = false;
+function armBack(card){
+  const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
+  const p = parseRef(card.dataset.ref);
+  back = { i: i < 0 ? 0 : i, ch: p.ch, before: p.v1 - 1 };
+}
+function spanEndingAt(verses, endIdx){
+  let start = endIdx;
+  while(start > 0 && (endIdx - start + 1) < 5 && !endsSentence(verseText(verses[start - 1]))) start--;
+  const parts = [];
+  for(let i = start; i <= endIdx; i++){
+    const t = verseText(verses[i]);
+    if(t) parts.push(t);
+  }
+  return { text: parts.join(" "), v1: verses[start].v, v2: verses[endIdx].v, start: start };
+}
+async function prependOne(){
+  if(mode !== "path" || prepending || !back) return;
+  if(back.i <= 0 && back.ch <= 1 && back.before <= 0) return;
+  prepending = true;
+  try {
+    let i = back.i, ch = back.ch, before = back.before;
+    if(before <= 0){
+      ch -= 1;
+      if(ch < 1){
+        i -= 1;
+        if(i < 0) return;
+        ch = BOOKS[i][2];
+      }
+      const prev = await fetchChapter(BOOKS[i][0], ch);
+      if(!prev.length) return;
+      before = prev.length;
+    }
+    const verses = await fetchChapter(BOOKS[i][0], ch);
+    if(!verses.length) return;
+    const endIdx = Math.min(verses.length - 1, before - 1);
+    if(endIdx < 0) return;
+    const span = spanEndingAt(verses, endIdx);
+    if(!span.text) return;
+    const pick = { slug: BOOKS[i][0], name: BOOKS[i][1], ch: ch };
+    const node = makeCard(makeItem(pick, span));
+    const first = feed.firstElementChild;
+    feed.insertBefore(node, first);
+    feed.scrollTop += node.offsetHeight;
+    back = { i: i, ch: ch, before: span.v1 - 1 };
+    shown++;
+    label();
+  } catch(e){ console.error(e); }
+  finally { prepending = false; }
+}
 function continueFromCard(card){
   buffer = [];
+  while(card.previousElementSibling) card.previousElementSibling.remove();
   while(card.nextElementSibling) card.nextElementSibling.remove();
+  armBack(card);
   const top = card.offsetTop;
   appendCards(4).then(function(){ feed.scrollTop = top; });
 }
@@ -92,6 +151,9 @@ document.getElementById("bookq").addEventListener("input", function(e){ renderBo
 document.getElementById("sheet").addEventListener("click", function(e){
   if(e.target.id === "sheet") closeSheet();
 });
+feed.addEventListener("scroll", function(){
+  if(mode === "path" && feed.scrollTop < 40) prependOne();
+}, { passive: true });
 const _resetFeed = resetFeed;
 resetFeed = function(){
   syncPathChrome();
