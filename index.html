@@ -15,7 +15,10 @@
     :root { --bg:#000; --gold:#d4a017; --text:#faf7f2; --muted:#a8a29e; }
     * { box-sizing:border-box; margin:0; padding:0; }
     html, body { height:100%; background:#000; color:var(--text); font-family:Georgia,"Times New Roman",serif; overflow:hidden; }
-    #feed { height:100dvh; overflow-y:scroll; scroll-snap-type:y mandatory; -webkit-overflow-scrolling:touch; overflow-anchor:none; }
+    #feed {
+      height:100dvh; overflow-y:scroll; scroll-snap-type:y mandatory;
+      scroll-behavior:smooth; -webkit-overflow-scrolling:touch; overflow-anchor:none;
+    }
     .card {
       height:100dvh; scroll-snap-align:start; scroll-snap-stop:always; position:relative;
       display:flex; flex-direction:column; justify-content:center; align-items:center;
@@ -31,39 +34,69 @@
       background:#000;
       filter:none;
       box-shadow:0 16px 48px rgba(0,0,0,0.55);
+      transition:opacity .35s ease, transform .45s ease;
     }
     .card::after { display:none; }
-    .content { position:relative; z-index:2; width:min(86vw, 420px); padding:0.9rem 0.15rem 0; }
-    .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; font-family:system-ui,sans-serif; }
+    .content { position:relative; z-index:2; width:min(86vw, 420px); padding:0.9rem 0.15rem 0; transition:opacity .3s ease, transform .35s ease; }
+    .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; font-family:system-ui,sans-serif; transition:color .2s ease; }
     .badge { display:inline-block; margin-left:0.5rem; font-size:0.58rem; letter-spacing:0.16em; color:var(--muted); }
     .verse { font-size:1.12rem; line-height:1.5; }
-    header { position:fixed; top:0; left:0; right:0; z-index:10; padding:0.65rem 1rem 0.35rem; background:linear-gradient(to bottom, rgba(0,0,0,0.88), transparent); font-family:system-ui,sans-serif; color:var(--muted); transition:opacity .2s; }
+    header { position:fixed; top:0; left:0; right:0; z-index:10; padding:0.65rem 1rem 0.35rem; background:linear-gradient(to bottom, rgba(0,0,0,0.88), transparent); font-family:system-ui,sans-serif; color:var(--muted); transition:opacity .25s ease, transform .25s ease; }
     .top { display:flex; justify-content:space-between; align-items:center; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; }
     .chips { display:flex; gap:0.35rem; overflow-x:auto; padding:0.45rem 0 0.2rem; scrollbar-width:none; }
     .chips::-webkit-scrollbar { display:none; }
-    .chip { flex:0 0 auto; border:0; border-radius:999px; padding:0.28rem 0.55rem; background:rgba(12,10,9,0.45); color:var(--muted); font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.12em; text-transform:uppercase; box-shadow:0 0 0 1px rgba(168,162,158,0.25); }
+    .chip {
+      flex:0 0 auto; border:0; border-radius:999px; padding:0.28rem 0.55rem;
+      background:rgba(12,10,9,0.45); color:var(--muted);
+      font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.12em; text-transform:uppercase;
+      box-shadow:0 0 0 1px rgba(168,162,158,0.25);
+      transition:color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
     .chip.on { color:var(--gold); box-shadow:0 0 0 1px rgba(212,160,23,0.55); }
     a.chip { text-decoration:none; display:inline-flex; align-items:center; }
     .path-only { display:none; }
     body.path-on .path-only { display:inline-flex; }
-    .hint { position:fixed; bottom:0.55rem; left:3.6rem; right:3.6rem; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; transition:opacity .2s; }
-    .fab { position:fixed; z-index:12; width:2.55rem; height:2.55rem; border:0; border-radius:999px; background:rgba(12,10,9,0.72); color:var(--gold); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); box-shadow:0 0 0 1px rgba(212,160,23,0.35); transition:opacity .2s; }
+    .hint { position:fixed; bottom:0.55rem; left:3.6rem; right:3.6rem; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; transition:opacity .25s ease; }
+    .fab {
+      position:fixed; z-index:12; width:2.55rem; height:2.55rem; border:0; border-radius:999px;
+      background:rgba(12,10,9,0.72); color:var(--gold);
+      display:flex; align-items:center; justify-content:center;
+      backdrop-filter:blur(8px); box-shadow:0 0 0 1px rgba(212,160,23,0.35);
+      transition:opacity .25s ease, transform .2s ease, background .2s ease, color .2s ease;
+    }
+    .fab:active { transform:scale(0.92); }
     #save { left:0.85rem; bottom:0.85rem; }
     #share { right:0.85rem; bottom:0.85rem; }
-    .fab svg { width:1.15rem; height:1.15rem; }
+    .fab svg { width:1.15rem; height:1.15rem; transition:transform .2s ease; }
     #save.on { color:#faf7f2; background:rgba(212,160,23,0.28); }
-    #toast { position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px); z-index:20; opacity:0; pointer-events:none; font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:#000; background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px; transition:opacity .2s, transform .2s; }
+    #toast {
+      position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px);
+      z-index:20; opacity:0; pointer-events:none;
+      font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase;
+      color:#000; background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px;
+      transition:opacity .25s ease, transform .25s ease;
+    }
     #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
     body.linger header, body.linger .hint, body.linger .fab { opacity:0; pointer-events:none; }
-    #sheet { position:fixed; inset:0; z-index:30; display:none; background:rgba(0,0,0,0.72); }
-    #sheet.open { display:block; }
-    #sheet .panel { position:absolute; left:0; right:0; bottom:0; max-height:78dvh; background:#111; border-top:1px solid rgba(212,160,23,0.28); padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column; }
+    #sheet { position:fixed; inset:0; z-index:30; display:none; background:rgba(0,0,0,0); transition:background .25s ease; }
+    #sheet.open { display:block; background:rgba(0,0,0,0.72); }
+    #sheet .panel {
+      position:absolute; left:0; right:0; bottom:0; max-height:78dvh;
+      background:#111; border-top:1px solid rgba(212,160,23,0.28);
+      padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column;
+      transform:translateY(12px); transition:transform .28s ease;
+    }
+    #sheet.open .panel { transform:translateY(0); }
     #sheet h2 { font:600 0.68rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); margin-bottom:0.65rem; }
-    #bookq { width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem; background:#000; color:var(--text); font:1rem Georgia,serif; box-shadow:0 0 0 1px rgba(168,162,158,0.25); }
+    #bookq { width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem; background:#000; color:var(--text); font:1rem Georgia,serif; box-shadow:0 0 0 1px rgba(168,162,158,0.25); transition:box-shadow .2s ease; }
+    #bookq:focus { outline:none; box-shadow:0 0 0 1px rgba(212,160,23,0.55); }
     #booklist { overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch; }
-    #booklist button { display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--text); font:1rem Georgia,serif; padding:0.55rem 0.15rem; border-bottom:1px solid rgba(250,247,242,0.06); }
+    #booklist button { display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--text); font:1rem Georgia,serif; padding:0.55rem 0.15rem; border-bottom:1px solid rgba(250,247,242,0.06); transition:color .2s ease, background .2s ease; }
     #booklist button.here { color:var(--gold); }
     #booklist .grp { font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); padding:0.85rem 0 0.3rem; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition:none !important; scroll-behavior:auto !important; }
+    }
   </style>
 </head>
 <body>
@@ -103,7 +136,7 @@
     </div>
   </div>
   <div id="toast">copied</div>
-  <script src="app.js?v=14"></script>
-  <script src="path-jump.js?v=14"></script>
+  <script src="app.js?v=15"></script>
+  <script src="path-jump.js?v=15"></script>
 </body>
 </html>
