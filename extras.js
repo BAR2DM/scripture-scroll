@@ -11,6 +11,7 @@ const LSX = { resume: "ss_resume", notes: "ss_notes" };
 let notes = load(LSX.notes, {});
 let speaking = false;
 let nightOn = false;
+const CALM = ["samantha","ava","allison","nicky","serena","karen","moira","susan","victoria","daniel","aaron"];
 function dayIndex(){
   const start = new Date(new Date().getFullYear(), 0, 0);
   const n = Math.floor((Date.now() - start) / 86400000);
@@ -70,6 +71,32 @@ function stopSpeech(){
   const btn = document.getElementById("listen");
   if(btn) btn.classList.remove("on");
 }
+function calmVoice(){
+  const voices = speechSynthesis.getVoices() || [];
+  const english = voices.filter(v => /^en(-|$)/i.test(v.lang));
+  const pool = english.length ? english : voices;
+  function score(v){
+    const name = v.name.toLowerCase();
+    let s = 0;
+    if(/premium|enhanced|natural|neural/.test(name)) s += 8;
+    const named = CALM.indexOf(name.split(/\s|\(/)[0]);
+    if(named >= 0) s += 6 - Math.min(named, 5);
+    if(/en-us/i.test(v.lang)) s += 2;
+    if(/compact|novelty/.test(name)) s -= 4;
+    return s;
+  }
+  return pool.slice().sort((a, b) => score(b) - score(a))[0] || null;
+}
+function speakLine(text, voice, pause){
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.voice = voice;
+  utter.lang = (voice && voice.lang) || "en-US";
+  utter.rate = 0.84;
+  utter.pitch = 0.92;
+  utter.volume = 1;
+  if(pause) utter.onend = function(){ setTimeout(pause, 280); };
+  speechSynthesis.speak(utter);
+}
 function readCurrent(){
   const card = visibleCard();
   if(!card || !card.dataset.text || !window.speechSynthesis){
@@ -77,13 +104,24 @@ function readCurrent(){
     return;
   }
   if(speaking){ stopSpeech(); return; }
-  const utter = new SpeechSynthesisUtterance(card.dataset.ref + ". " + card.dataset.text);
-  utter.rate = 0.92;
-  utter.onend = stopSpeech;
+  const voice = calmVoice();
   speaking = true;
   document.getElementById("listen").classList.add("on");
   speechSynthesis.cancel();
-  speechSynthesis.speak(utter);
+  const body = card.dataset.text.replace(/\s+/g, " ").trim();
+  speakLine(card.dataset.ref, voice, function(){
+    const rest = new SpeechSynthesisUtterance(body);
+    rest.voice = voice;
+    rest.lang = (voice && voice.lang) || "en-US";
+    rest.rate = 0.82;
+    rest.pitch = 0.9;
+    rest.onend = stopSpeech;
+    speechSynthesis.speak(rest);
+  });
+}
+if(window.speechSynthesis){
+  speechSynthesis.getVoices();
+  speechSynthesis.addEventListener("voiceschanged", function(){ speechSynthesis.getVoices(); });
 }
 function armNight(){
   if(nightOn) return;
