@@ -59,6 +59,8 @@ function parseRef(ref){
 }
 let back = null;
 let prepending = false;
+let touchY = 0;
+let touchTop = 0;
 function armBack(card){
   const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
   const p = parseRef(card.dataset.ref);
@@ -123,6 +125,16 @@ async function continueFromCard(card){
   feed.scrollTop = card.offsetTop;
   feed.style.scrollSnapType = "";
 }
+function stepOne(dir){
+  const card = visibleCard();
+  if(!card) return;
+  const target = dir < 0 ? card.previousElementSibling : card.nextElementSibling;
+  if(!target){
+    if(dir < 0) prependOne();
+    return;
+  }
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
   const pathBtn = e.target.closest('[data-mode="path"]');
@@ -158,8 +170,27 @@ document.getElementById("bookq").addEventListener("input", function(e){ renderBo
 document.getElementById("sheet").addEventListener("click", function(e){
   if(e.target.id === "sheet") closeSheet();
 });
+feed.addEventListener("touchstart", function(e){
+  if(mode !== "path" || !e.touches[0]) return;
+  touchY = e.touches[0].clientY;
+  touchTop = feed.scrollTop;
+}, { passive: true });
+feed.addEventListener("touchend", function(e){
+  if(mode !== "path" || !e.changedTouches[0]) return;
+  const dy = e.changedTouches[0].clientY - touchY;
+  if(Math.abs(dy) < 36) return;
+  if(Math.abs(feed.scrollTop - touchTop) > window.innerHeight * 0.85){
+    const card = visibleCard();
+    const backTo = dy > 0 ? card && card.previousElementSibling : card && card.nextElementSibling;
+    if(backTo) backTo.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    stepOne(dy > 0 ? -1 : 1);
+  }
+}, { passive: true });
 feed.addEventListener("scroll", function(){
-  if(mode === "path" && feed.scrollTop < window.innerHeight * 1.2) prependOne();
+  if(mode !== "path") return;
+  const card = visibleCard();
+  if(card && !card.previousElementSibling && feed.scrollTop < 24) prependOne();
 }, { passive: true });
 const _resetFeed = resetFeed;
 resetFeed = function(){
