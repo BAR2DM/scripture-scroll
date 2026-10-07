@@ -10,7 +10,10 @@ const PLAN = [
 const LSX = { resume: "ss_resume", notes: "ss_notes" };
 let notes = load(LSX.notes, {});
 let speaking = false;
+let voiceOn = false;
 let nightOn = false;
+let voiceTimer = 0;
+let voiceRef = "";
 const CALM = ["samantha","ava","allison","nicky","serena","karen","moira","susan","victoria","daniel","aaron"];
 function dayIndex(){
   const start = new Date(new Date().getFullYear(), 0, 0);
@@ -65,11 +68,13 @@ function startPlan(){
   flash("day " + (dayIndex() + 1) + " · " + day[2]);
   resetFeed();
 }
-function stopSpeech(){
+function markVoice(){
+  const btn = document.getElementById("listen");
+  if(btn) btn.classList.toggle("on", voiceOn);
+}
+function haltSpeech(){
   if(window.speechSynthesis) speechSynthesis.cancel();
   speaking = false;
-  const btn = document.getElementById("listen");
-  if(btn) btn.classList.remove("on");
 }
 function calmVoice(){
   const voices = speechSynthesis.getVoices() || [];
@@ -97,27 +102,49 @@ function speakLine(text, voice, pause){
   if(pause) utter.onend = function(){ setTimeout(pause, 280); };
   speechSynthesis.speak(utter);
 }
-function readCurrent(){
-  const card = visibleCard();
-  if(!card || !card.dataset.text || !window.speechSynthesis){
-    flash("audio unavailable");
-    return;
-  }
-  if(speaking){ stopSpeech(); return; }
+function readCard(card){
+  if(!card || !card.dataset.text || !window.speechSynthesis) return;
+  if(card.dataset.ref === voiceRef && speaking) return;
+  voiceRef = card.dataset.ref;
   const voice = calmVoice();
   speaking = true;
-  document.getElementById("listen").classList.add("on");
+  markVoice();
   speechSynthesis.cancel();
   const body = card.dataset.text.replace(/\s+/g, " ").trim();
   speakLine(card.dataset.ref, voice, function(){
+    if(!voiceOn || voiceRef !== card.dataset.ref) return;
     const rest = new SpeechSynthesisUtterance(body);
     rest.voice = voice;
     rest.lang = (voice && voice.lang) || "en-US";
     rest.rate = 0.82;
     rest.pitch = 0.9;
-    rest.onend = stopSpeech;
+    rest.onend = function(){ speaking = false; };
     speechSynthesis.speak(rest);
   });
+}
+function readCurrent(){
+  if(!window.speechSynthesis){
+    flash("audio unavailable");
+    return;
+  }
+  if(voiceOn){
+    voiceOn = false;
+    voiceRef = "";
+    haltSpeech();
+    markVoice();
+    return;
+  }
+  voiceOn = true;
+  markVoice();
+  readCard(visibleCard());
+}
+function queueVoice(){
+  if(!voiceOn) return;
+  clearTimeout(voiceTimer);
+  voiceTimer = setTimeout(function(){
+    const card = visibleCard();
+    if(card && card.dataset.ref !== voiceRef) readCard(card);
+  }, 280);
 }
 if(window.speechSynthesis){
   speechSynthesis.getVoices();
@@ -249,8 +276,8 @@ document.getElementById("note-save").addEventListener("click", storeNote);
 document.getElementById("note-cancel").addEventListener("click", closeNote);
 feed.addEventListener("scroll", function(){
   rememberCard();
-  stopSpeech();
   if(feed.scrollTop > 40) armNight();
+  queueVoice();
 }, { passive: true });
 const stored = load(LSX.resume, null);
 if(stored && stored.ref){
