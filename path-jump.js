@@ -54,10 +54,20 @@ function openSheet(){
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
   const pathBtn = e.target.closest('[data-mode="path"]');
-  if(pathBtn && mode === "path"){
+  if(!pathBtn) return;
+  if(mode === "path"){
     e.stopImmediatePropagation();
     openSheet();
+    return;
   }
+  const card = visibleCard();
+  if(!card || !anchorPathToCard(card)) return;
+  e.stopImmediatePropagation();
+  mode = "path";
+  save(LS.mode, mode);
+  document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === "path"));
+  syncPathChrome();
+  resetFeed();
 }, true);
 document.getElementById("jump").addEventListener("click", function(e){
   e.preventDefault();
