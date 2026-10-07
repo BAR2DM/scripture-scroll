@@ -54,7 +54,8 @@ function openSheet(){
 function continueFromCard(card){
   buffer = [];
   while(card.nextElementSibling) card.nextElementSibling.remove();
-  appendCards(4);
+  const top = card.offsetTop;
+  appendCards(4).then(function(){ feed.scrollTop = top; });
 }
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
