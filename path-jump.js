@@ -61,6 +61,7 @@ let back = null;
 let prepending = false;
 let touching = false;
 let refillTimer = 0;
+let lastScroll = 0;
 function armBack(card){
   const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
   const p = parseRef(card.dataset.ref);
@@ -83,6 +84,7 @@ function spanEndingAt(verses, endIdx){
 }
 async function prependOne(){
   if(mode !== "path" || prepending || touching || !back) return false;
+  if(Date.now() - lastScroll < 700) return false;
   if(back.i <= 0 && back.ch <= 1 && back.before <= 0) return false;
   prepending = true;
   const anchor = visibleCard();
@@ -101,18 +103,19 @@ async function prependOne(){
       before = prev.length;
     }
     const verses = await fetchChapter(BOOKS[i][0], ch);
-    if(!verses.length || touching) return false;
+    if(!verses.length || touching || Date.now() - lastScroll < 700) return false;
     const endIdx = Math.min(verses.length - 1, before - 1);
     if(endIdx < 0) return false;
     const span = spanEndingAt(verses, endIdx);
     if(!span.text) return false;
     const pick = { slug: BOOKS[i][0], name: BOOKS[i][1], ch: ch };
     const node = makeCard(makeItem(pick, span));
-    const snap = feed.style.scrollSnapType;
+    feed.style.scrollBehavior = "auto";
     feed.style.scrollSnapType = "none";
     feed.insertBefore(node, feed.firstElementChild);
     if(anchor && anchor.isConnected) feed.scrollTop = anchor.offsetTop - beforeTop;
-    feed.style.scrollSnapType = snap;
+    feed.style.scrollSnapType = "";
+    feed.style.scrollBehavior = "";
     back = { i: i, ch: ch, before: span.v1 - 1 };
     shown++;
     label();
@@ -122,10 +125,11 @@ async function prependOne(){
 }
 async function refillBehind(){
   if(touching || mode !== "path") return;
+  if(Date.now() - lastScroll < 700){ scheduleRefill(); return; }
   const card = visibleCard();
   if(!card) return;
   let guard = 0;
-  while(guard < 4 && cardsBefore(card) < 3){
+  while(guard < 6 && cardsBefore(card) < 5){
     guard++;
     if(touching) break;
     const ok = await prependOne();
@@ -134,21 +138,21 @@ async function refillBehind(){
 }
 function scheduleRefill(){
   clearTimeout(refillTimer);
-  refillTimer = setTimeout(refillBehind, 520);
+  refillTimer = setTimeout(refillBehind, 800);
 }
 async function continueFromCard(card){
   buffer = [];
   while(card.previousElementSibling) card.previousElementSibling.remove();
   while(card.nextElementSibling) card.nextElementSibling.remove();
   armBack(card);
+  feed.style.scrollBehavior = "auto";
   feed.style.scrollSnapType = "none";
-  await appendCards(3);
-  await prependOne();
-  await prependOne();
-  await prependOne();
-  await prependOne();
+  await appendCards(4);
+  for(let n = 0; n < 6; n++){ if(!(await prependOne())) break; }
   feed.scrollTop = card.offsetTop;
   feed.style.scrollSnapType = "";
+  feed.style.scrollBehavior = "";
+  lastScroll = 0;
 }
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
@@ -186,6 +190,7 @@ document.getElementById("sheet-close").addEventListener("click", function(e){
   e.preventDefault();
   closeSheet();
 });
+feed.addEventListener("scroll", function(){ lastScroll = Date.now(); }, { passive: true });
 feed.addEventListener("touchstart", function(){
   if(mode !== "path") return;
   touching = true;
