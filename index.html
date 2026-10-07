@@ -1,3 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0c0a09">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Scripture">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Scripture Scroll</title>
+  <style>
+    :root { --bg:#000; --gold:#d4a017; --text:#faf7f2; --muted:#a8a29e; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html, body { height:100%; background:#000; color:var(--text); font-family:Georgia,"Times New Roman",serif; overflow:hidden; }
+    #feed {
+      height:100dvh; overflow-y:scroll; scroll-snap-type:y mandatory;
+      scroll-behavior:smooth; -webkit-overflow-scrolling:touch; overflow-anchor:none;
+    }
+    .card {
+      height:100dvh; scroll-snap-align:start; scroll-snap-stop:always; position:relative;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      overflow:hidden; background:#000; padding:5.2rem 0 4.2rem;
+    }
+    .card img.scene {
+      position:relative; inset:auto;
+      width:min(86vw, 420px);
+      max-height:56dvh;
+      height:auto;
+      aspect-ratio:1 / 1;
+      object-fit:contain;
+      background:#000;
+      filter:none;
+      box-shadow:0 16px 48px rgba(0,0,0,0.55);
+      transition:opacity .35s ease, transform .45s ease, box-shadow .35s ease;
+    }
+    .card::after { display:none; }
+    .content { position:relative; z-index:2; width:min(86vw, 420px); padding:0.9rem 0.15rem 0; }
+    .ref { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; font-family:system-ui,sans-serif; }
+    .badge { display:inline-block; margin-left:0.5rem; font-size:0.58rem; letter-spacing:0.16em; color:var(--muted); }
+    .verse { font-size:1.12rem; line-height:1.5; }
+    .note { margin-top:0.55rem; font:0.78rem/1.4 system-ui,sans-serif; color:var(--muted); }
+    header { position:fixed; top:0; left:0; right:0; z-index:10; padding:0.65rem 1rem 0.35rem; background:linear-gradient(to bottom, rgba(0,0,0,0.88), transparent); font-family:system-ui,sans-serif; color:var(--muted); transition:opacity .25s ease, transform .25s ease; }
+    body.night header { opacity:0; pointer-events:none; }
+    body.night.linger header { opacity:1; pointer-events:auto; }
+    .top { display:flex; justify-content:space-between; align-items:center; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; }
+    .chips { display:flex; gap:0.35rem; overflow-x:auto; padding:0.45rem 0 0.2rem; scrollbar-width:none; }
+    .chips::-webkit-scrollbar { display:none; }
+    .chip {
+      flex:0 0 auto; border:0; border-radius:999px; padding:0.28rem 0.55rem;
+      background:rgba(12,10,9,0.45); color:var(--muted);
+      font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.12em; text-transform:uppercase;
+      box-shadow:0 0 0 1px rgba(168,162,158,0.25);
+      transition:color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .chip.on { color:var(--gold); box-shadow:0 0 0 1px rgba(212,160,23,0.55); }
+    .chip[hidden] { display:none; }
+    a.chip { text-decoration:none; display:inline-flex; align-items:center; }
+    .path-only { display:none; }
+    body.path-on .path-only { display:inline-flex; }
+    .hint { position:fixed; bottom:0.55rem; left:3.6rem; right:3.6rem; text-align:center; font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); z-index:10; font-family:system-ui,sans-serif; pointer-events:none; transition:opacity .25s ease; }
+    .fab {
+      position:fixed; z-index:12; width:2.55rem; height:2.55rem; border:0; border-radius:999px;
+      background:rgba(12,10,9,0.72); color:var(--gold);
+      display:flex; align-items:center; justify-content:center;
+      backdrop-filter:blur(8px); box-shadow:0 0 0 1px rgba(212,160,23,0.35);
+      transition:opacity .25s ease, transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+    .fab:active { transform:scale(0.92); }
+    #save { left:0.85rem; bottom:0.85rem; }
+    #listen { left:0.85rem; bottom:3.7rem; }
+    #share { right:0.85rem; bottom:0.85rem; }
+    .fab svg { width:1.15rem; height:1.15rem; transition:transform .2s ease; }
+    #save.on, #listen.on { color:#faf7f2; background:rgba(212,160,23,0.28); }
+    #toast {
+      position:fixed; left:50%; bottom:4.2rem; transform:translateX(-50%) translateY(8px);
+      z-index:20; opacity:0; pointer-events:none;
+      font-family:system-ui,sans-serif; font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase;
+      color:#000; background:var(--gold); padding:0.4rem 0.7rem; border-radius:999px;
+      transition:opacity .25s ease, transform .25s ease;
+    }
+    #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+    body.linger .hint, body.linger .fab { opacity:0; pointer-events:none; }
+    #sheet, #note-box { position:fixed; inset:0; z-index:30; display:none; background:#000; }
+    #sheet.open, #note-box.open { display:block; }
+    #sheet .panel, #note-box .panel {
+      position:absolute; inset:0; max-height:none; height:100dvh;
+      background:#000; border:0;
+      padding:0.85rem 1rem 1.4rem; overflow:hidden; display:flex; flex-direction:column;
+    }
+    #sheet .sheet-top, #note-box .sheet-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem; }
+    #sheet h2, #note-box h2 { font:600 0.68rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
+    #sheet-close, #note-cancel, #note-save {
+      border:0; background:transparent; color:var(--gold);
+      font:600 0.68rem/1 system-ui,sans-serif; letter-spacing:0.14em; text-transform:uppercase;
+      text-decoration:underline; text-decoration-color:transparent; text-underline-offset:0.25rem;
+      transition:text-decoration-color .2s ease, color .2s ease;
+    }
+    #bookq, #note-input { width:100%; border:0; border-radius:8px; padding:0.65rem 0.75rem; margin-bottom:0.65rem; background:#111; color:var(--text); font:1rem Georgia,serif; box-shadow:0 0 0 1px rgba(168,162,158,0.25); transition:box-shadow .2s ease; }
+    #note-input { min-height:8rem; resize:none; }
+    #bookq:focus, #note-input:focus { outline:none; box-shadow:0 0 0 1px rgba(212,160,23,0.55); }
+    #booklist { overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch; }
+    #booklist button {
+      display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--text);
+      font:1rem Georgia,serif; padding:0.7rem 0.15rem; border-bottom:1px solid rgba(250,247,242,0.06);
+      transition:color .2s ease, background .2s ease, padding-left .2s ease;
+    }
+    #booklist button.here { color:var(--gold); }
+    #booklist .grp { font:600 0.58rem/1 system-ui,sans-serif; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); padding:0.85rem 0 0.3rem; }
+    @media (hover: hover) {
+      .chip:hover { color:var(--gold); background:rgba(212,160,23,0.12); box-shadow:0 0 0 1px rgba(212,160,23,0.45); }
+      .fab:hover { transform:scale(1.06); box-shadow:0 0 0 1px rgba(212,160,23,0.85), 0 8px 24px rgba(212,160,23,0.18); }
+      .card img.scene:hover { transform:translateY(-4px); box-shadow:0 22px 56px rgba(0,0,0,0.72); }
+      #booklist button:hover { color:var(--gold); background:rgba(212,160,23,0.08); padding-left:0.4rem; }
+      #sheet-close:hover, #note-cancel:hover, #note-save:hover { text-decoration-color:var(--gold); }
+    }
+    .chip:active { background:rgba(212,160,23,0.16); color:var(--gold); }
+    #booklist button:active { color:var(--gold); background:rgba(212,160,23,0.1); }
+    #sheet-close:active, #note-cancel:active, #note-save:active { text-decoration-color:var(--gold); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition:none !important; scroll-behavior:auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top"><span>Scripture Scroll</span><span id="progress">KJV</span></div>
+    <div class="chips" id="modes">
+      <button class="chip on" data-mode="shuffle" type="button">Shuffle</button>
+      <button class="chip" data-mode="path" type="button">Path</button>
+      <button class="chip path-only" id="jump" type="button">Jump</button>
+      <button class="chip path-only" id="prevbook" type="button">Prev book</button>
+      <button class="chip path-only" id="nextbook" type="button">Next book</button>
+      <button class="chip" data-mode="saves" type="button">Saved</button>
+      <button class="chip" id="resume" type="button" hidden>Resume</button>
+      <button class="chip" id="plan" type="button">Plan</button>
+      <a class="chip" href="https://bible.usccb.org/daily-bible-reading" target="_blank" rel="noopener">Lectionary</a>
+    </div>
+    <div class="chips" id="moods">
+      <button class="chip on" data-mood="all" type="button">All</button>
+      <button class="chip" data-mood="lament" type="button">Lament</button>
+      <button class="chip" data-mood="promise" type="button">Promise</button>
+      <button class="chip" data-mood="command" type="button">Command</button>
+      <button class="chip" data-mood="gospel" type="button">Gospel</button>
+      <button class="chip" data-mood="wisdom" type="button">Wisdom</button>
+    </div>
+  </header>
+  <div id="feed"></div>
+  <div class="hint" id="hint">swipe · hold to linger</div>
+  <button id="listen" class="fab" type="button" aria-label="Read verse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4"/><path d="M8 7v10"/><path d="M12 4v16"/><path d="M16 8v8"/><path d="M20 11v2"/></svg>
+  </button>
+  <button id="save" class="fab" type="button" aria-label="Save verse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+  </button>
+  <button id="share" class="fab" type="button" aria-label="Share verse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
+  </button>
+  <div id="sheet">
+    <div class="panel">
+      <div class="sheet-top"><h2>Start path at</h2><button id="sheet-close" type="button">Close</button></div>
+      <input id="bookq" type="search" placeholder="Search books" autocomplete="off">
+      <div id="booklist"></div>
+    </div>
+  </div>
+  <div id="note-box">
+    <div class="panel">
+      <div class="sheet-top"><h2 id="note-ref">Note</h2><button id="note-cancel" type="button">Close</button></div>
+      <textarea id="note-input" maxlength="240" placeholder="One line for yourself"></textarea>
+      <button id="note-save" type="button">Save note</button>
+    </div>
+  </div>
+  <div id="toast">copied</div>
   <script src="app.js?v=20"></script>
   <script src="path-jump.js?v=20"></script>
   <script src="extras.js?v=20"></script>
+</body>
+</html>
