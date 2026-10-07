@@ -182,8 +182,9 @@ document.getElementById("nextbook").addEventListener("click", function(e){
   jumpToBook((path.i || 0) + 1);
 });
 document.getElementById("bookq").addEventListener("input", function(e){ renderBooks(e.target.value); });
-document.getElementById("sheet").addEventListener("click", function(e){
-  if(e.target.id === "sheet") closeSheet();
+document.getElementById("sheet-close").addEventListener("click", function(e){
+  e.preventDefault();
+  closeSheet();
 });
 feed.addEventListener("touchstart", function(){
   if(mode !== "path") return;
