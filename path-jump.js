@@ -59,7 +59,6 @@ function parseRef(ref){
 }
 let back = null;
 let prepending = false;
-let holdCard = null;
 function armBack(card){
   const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
   const p = parseRef(card.dataset.ref);
@@ -75,17 +74,12 @@ function spanEndingAt(verses, endIdx){
   }
   return { text: parts.join(" "), v1: verses[start].v, v2: verses[endIdx].v, start: start };
 }
-function lockView(){
-  if(!holdCard || !holdCard.isConnected) return;
-  const top = holdCard.offsetTop;
-  if(Math.abs(feed.scrollTop - top) > 2) feed.scrollTop = top;
-}
 async function prependOne(){
   if(mode !== "path" || prepending || !back) return false;
   if(back.i <= 0 && back.ch <= 1 && back.before <= 0) return false;
   prepending = true;
-  const anchor = holdCard;
-  const beforeTop = anchor ? anchor.offsetTop : feed.scrollTop;
+  const anchor = visibleCard();
+  const beforeTop = anchor ? anchor.getBoundingClientRect().top : 0;
   try {
     let i = back.i, ch = back.ch, before = back.before;
     if(before <= 0){
@@ -108,8 +102,10 @@ async function prependOne(){
     const pick = { slug: BOOKS[i][0], name: BOOKS[i][1], ch: ch };
     const node = makeCard(makeItem(pick, span));
     feed.insertBefore(node, feed.firstElementChild);
-    if(anchor && anchor.isConnected) feed.scrollTop += anchor.offsetTop - beforeTop;
-    else feed.scrollTop += node.offsetHeight;
+    if(anchor && anchor.isConnected){
+      const drift = anchor.getBoundingClientRect().top - beforeTop;
+      if(drift) feed.scrollTop += drift;
+    }
     back = { i: i, ch: ch, before: span.v1 - 1 };
     shown++;
     label();
@@ -118,16 +114,14 @@ async function prependOne(){
   finally { prepending = false; }
 }
 async function continueFromCard(card){
-  holdCard = card;
   buffer = [];
   while(card.previousElementSibling) card.previousElementSibling.remove();
   while(card.nextElementSibling) card.nextElementSibling.remove();
   armBack(card);
-  feed.scrollTop = card.offsetTop;
+  feed.style.scrollSnapType = "none";
   await Promise.all([appendCards(3), prependOne(), prependOne()]);
-  lockView();
-  setTimeout(lockView, 60);
-  setTimeout(function(){ holdCard = null; }, 700);
+  feed.scrollTop = card.offsetTop;
+  feed.style.scrollSnapType = "";
 }
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
@@ -165,8 +159,7 @@ document.getElementById("sheet").addEventListener("click", function(e){
   if(e.target.id === "sheet") closeSheet();
 });
 feed.addEventListener("scroll", function(){
-  if(holdCard){ lockView(); return; }
-  if(mode === "path" && feed.scrollTop < window.innerHeight) prependOne();
+  if(mode === "path" && feed.scrollTop < window.innerHeight * 1.2) prependOne();
 }, { passive: true });
 const _resetFeed = resetFeed;
 resetFeed = function(){
