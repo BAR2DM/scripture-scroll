@@ -51,6 +51,11 @@ function openSheet(){
   document.getElementById("sheet").classList.add("open");
   setTimeout(function(){ document.getElementById("bookq").focus(); }, 50);
 }
+function continueFromCard(card){
+  buffer = [];
+  while(card.nextElementSibling) card.nextElementSibling.remove();
+  appendCards(4);
+}
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
   const pathBtn = e.target.closest('[data-mode="path"]');
@@ -67,7 +72,7 @@ document.getElementById("modes").addEventListener("click", function(e){
   save(LS.mode, mode);
   document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === "path"));
   syncPathChrome();
-  resetFeed();
+  continueFromCard(card);
 }, true);
 document.getElementById("jump").addEventListener("click", function(e){
   e.preventDefault();
