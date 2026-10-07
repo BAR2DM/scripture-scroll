@@ -60,12 +60,16 @@ function parseRef(ref){
 let back = null;
 let prepending = false;
 let touching = false;
-let touchY = 0;
-let startCard = null;
+let refillTimer = 0;
 function armBack(card){
   const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
   const p = parseRef(card.dataset.ref);
   back = { i: i < 0 ? 0 : i, ch: p.ch, before: p.v1 - 1 };
+}
+function cardsBefore(card){
+  let n = 0, el = card;
+  while(el && el.previousElementSibling){ n++; el = el.previousElementSibling; }
+  return n;
 }
 function spanEndingAt(verses, endIdx){
   let start = endIdx;
@@ -97,7 +101,7 @@ async function prependOne(){
       before = prev.length;
     }
     const verses = await fetchChapter(BOOKS[i][0], ch);
-    if(!verses.length) return false;
+    if(!verses.length || touching) return false;
     const endIdx = Math.min(verses.length - 1, before - 1);
     if(endIdx < 0) return false;
     const span = spanEndingAt(verses, endIdx);
@@ -116,14 +120,21 @@ async function prependOne(){
   } catch(e){ console.error(e); return false; }
   finally { prepending = false; }
 }
-async function ensureBehind(card){
+async function refillBehind(){
+  if(touching || mode !== "path") return;
+  const card = visibleCard();
   if(!card) return;
   let guard = 0;
-  while(guard < 2 && card.isConnected && !card.previousElementSibling){
+  while(guard < 4 && cardsBefore(card) < 3){
     guard++;
+    if(touching) break;
     const ok = await prependOne();
     if(!ok) break;
   }
+}
+function scheduleRefill(){
+  clearTimeout(refillTimer);
+  refillTimer = setTimeout(refillBehind, 520);
 }
 async function continueFromCard(card){
   buffer = [];
@@ -132,6 +143,8 @@ async function continueFromCard(card){
   armBack(card);
   feed.style.scrollSnapType = "none";
   await appendCards(3);
+  await prependOne();
+  await prependOne();
   await prependOne();
   await prependOne();
   feed.scrollTop = card.offsetTop;
@@ -172,28 +185,19 @@ document.getElementById("bookq").addEventListener("input", function(e){ renderBo
 document.getElementById("sheet").addEventListener("click", function(e){
   if(e.target.id === "sheet") closeSheet();
 });
-feed.addEventListener("touchstart", function(e){
-  if(mode !== "path" || !e.touches[0]) return;
+feed.addEventListener("touchstart", function(){
+  if(mode !== "path") return;
   touching = true;
-  touchY = e.touches[0].clientY;
-  startCard = visibleCard();
+  clearTimeout(refillTimer);
 }, { passive: true });
-feed.addEventListener("touchend", function(e){
+feed.addEventListener("touchend", function(){
   touching = false;
-  if(mode !== "path" || !e.changedTouches[0] || !startCard) return;
-  const dy = e.changedTouches[0].clientY - touchY;
-  const from = startCard;
-  setTimeout(function(){
-    const card = visibleCard();
-    if(card) ensureBehind(card);
-    if(Math.abs(dy) < 28 || !from.isConnected) return;
-    const intended = dy > 0 ? from.previousElementSibling : from.nextElementSibling;
-    if(intended && card && card !== intended && card !== from){
-      intended.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, 80);
+  if(mode === "path") scheduleRefill();
 }, { passive: true });
-feed.addEventListener("touchcancel", function(){ touching = false; }, { passive: true });
+feed.addEventListener("touchcancel", function(){
+  touching = false;
+  if(mode === "path") scheduleRefill();
+}, { passive: true });
 const _resetFeed = resetFeed;
 resetFeed = function(){
   syncPathChrome();
