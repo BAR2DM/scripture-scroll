@@ -59,9 +59,9 @@ function parseRef(ref){
 }
 let back = null;
 let prepending = false;
+let touching = false;
 let touchY = 0;
 let startCard = null;
-let settling = false;
 function armBack(card){
   const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
   const p = parseRef(card.dataset.ref);
@@ -78,11 +78,11 @@ function spanEndingAt(verses, endIdx){
   return { text: parts.join(" "), v1: verses[start].v, v2: verses[endIdx].v, start: start };
 }
 async function prependOne(){
-  if(mode !== "path" || prepending || !back) return false;
+  if(mode !== "path" || prepending || touching || !back) return false;
   if(back.i <= 0 && back.ch <= 1 && back.before <= 0) return false;
   prepending = true;
-  const anchor = startCard && startCard.isConnected ? startCard : visibleCard();
-  const beforeTop = anchor ? anchor.getBoundingClientRect().top : 0;
+  const anchor = visibleCard();
+  const beforeTop = anchor ? anchor.offsetTop - feed.scrollTop : 0;
   try {
     let i = back.i, ch = back.ch, before = back.before;
     if(before <= 0){
@@ -104,11 +104,11 @@ async function prependOne(){
     if(!span.text) return false;
     const pick = { slug: BOOKS[i][0], name: BOOKS[i][1], ch: ch };
     const node = makeCard(makeItem(pick, span));
+    const snap = feed.style.scrollSnapType;
+    feed.style.scrollSnapType = "none";
     feed.insertBefore(node, feed.firstElementChild);
-    if(anchor && anchor.isConnected){
-      const drift = anchor.getBoundingClientRect().top - beforeTop;
-      if(drift) feed.scrollTop += drift;
-    }
+    if(anchor && anchor.isConnected) feed.scrollTop = anchor.offsetTop - beforeTop;
+    feed.style.scrollSnapType = snap;
     back = { i: i, ch: ch, before: span.v1 - 1 };
     shown++;
     label();
@@ -116,21 +116,26 @@ async function prependOne(){
   } catch(e){ console.error(e); return false; }
   finally { prepending = false; }
 }
+async function ensureBehind(card){
+  if(!card) return;
+  let guard = 0;
+  while(guard < 2 && card.isConnected && !card.previousElementSibling){
+    guard++;
+    const ok = await prependOne();
+    if(!ok) break;
+  }
+}
 async function continueFromCard(card){
   buffer = [];
   while(card.previousElementSibling) card.previousElementSibling.remove();
   while(card.nextElementSibling) card.nextElementSibling.remove();
   armBack(card);
   feed.style.scrollSnapType = "none";
-  await Promise.all([appendCards(3), prependOne(), prependOne()]);
+  await appendCards(3);
+  await prependOne();
+  await prependOne();
   feed.scrollTop = card.offsetTop;
   feed.style.scrollSnapType = "";
-}
-function goTo(node){
-  if(!node) return;
-  settling = true;
-  node.scrollIntoView({ behavior: "smooth", block: "start" });
-  setTimeout(function(){ settling = false; }, 450);
 }
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
@@ -169,26 +174,26 @@ document.getElementById("sheet").addEventListener("click", function(e){
 });
 feed.addEventListener("touchstart", function(e){
   if(mode !== "path" || !e.touches[0]) return;
+  touching = true;
   touchY = e.touches[0].clientY;
   startCard = visibleCard();
 }, { passive: true });
 feed.addEventListener("touchend", function(e){
-  if(mode !== "path" || !e.changedTouches[0] || !startCard || !startCard.isConnected) return;
+  touching = false;
+  if(mode !== "path" || !e.changedTouches[0] || !startCard) return;
   const dy = e.changedTouches[0].clientY - touchY;
-  if(Math.abs(dy) < 28){
-    goTo(startCard);
-    return;
-  }
-  const target = dy > 0 ? startCard.previousElementSibling : startCard.nextElementSibling;
-  if(target) goTo(target);
-  else if(dy > 0) prependOne().then(function(){ if(startCard.previousElementSibling) goTo(startCard.previousElementSibling); });
-  else goTo(startCard);
+  const from = startCard;
+  setTimeout(function(){
+    const card = visibleCard();
+    if(card) ensureBehind(card);
+    if(Math.abs(dy) < 28 || !from.isConnected) return;
+    const intended = dy > 0 ? from.previousElementSibling : from.nextElementSibling;
+    if(intended && card && card !== intended && card !== from){
+      intended.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, 80);
 }, { passive: true });
-feed.addEventListener("scroll", function(){
-  if(mode !== "path" || settling) return;
-  const card = visibleCard();
-  if(card && !card.previousElementSibling && feed.scrollTop < 8) prependOne();
-}, { passive: true });
+feed.addEventListener("touchcancel", function(){ touching = false; }, { passive: true });
 const _resetFeed = resetFeed;
 resetFeed = function(){
   syncPathChrome();
