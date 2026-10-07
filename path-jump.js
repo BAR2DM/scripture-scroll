@@ -59,6 +59,9 @@ function parseRef(ref){
 }
 let back = null;
 let prepending = false;
+let suppressBack = false;
+let lastTop = 0;
+let armedUp = false;
 function armBack(card){
   const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
   const p = parseRef(card.dataset.ref);
@@ -75,9 +78,10 @@ function spanEndingAt(verses, endIdx){
   return { text: parts.join(" "), v1: verses[start].v, v2: verses[endIdx].v, start: start };
 }
 async function prependOne(){
-  if(mode !== "path" || prepending || !back) return;
+  if(mode !== "path" || prepending || suppressBack || !back || !armedUp) return;
   if(back.i <= 0 && back.ch <= 1 && back.before <= 0) return;
   prepending = true;
+  suppressBack = true;
   try {
     let i = back.i, ch = back.ch, before = back.before;
     if(before <= 0){
@@ -106,15 +110,24 @@ async function prependOne(){
     shown++;
     label();
   } catch(e){ console.error(e); }
-  finally { prepending = false; }
+  finally {
+    prepending = false;
+    lastTop = feed.scrollTop;
+    setTimeout(function(){ suppressBack = false; }, 250);
+  }
 }
 function continueFromCard(card){
+  suppressBack = true;
+  armedUp = false;
   buffer = [];
   while(card.previousElementSibling) card.previousElementSibling.remove();
   while(card.nextElementSibling) card.nextElementSibling.remove();
   armBack(card);
-  const top = card.offsetTop;
-  appendCards(4).then(function(){ feed.scrollTop = top; });
+  appendCards(4).then(function(){
+    card.scrollIntoView({ block: "start" });
+    lastTop = feed.scrollTop;
+    setTimeout(function(){ suppressBack = false; lastTop = feed.scrollTop; }, 500);
+  });
 }
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
@@ -152,7 +165,11 @@ document.getElementById("sheet").addEventListener("click", function(e){
   if(e.target.id === "sheet") closeSheet();
 });
 feed.addEventListener("scroll", function(){
-  if(mode === "path" && feed.scrollTop < 40) prependOne();
+  if(suppressBack){ lastTop = feed.scrollTop; return; }
+  const goingUp = feed.scrollTop < lastTop - 12;
+  if(goingUp) armedUp = true;
+  lastTop = feed.scrollTop;
+  if(mode === "path" && armedUp && goingUp && feed.scrollTop < 80) prependOne();
 }, { passive: true });
 const _resetFeed = resetFeed;
 resetFeed = function(){
