@@ -240,6 +240,19 @@ function label(){
   bits.push(shown+" drawn");
   progress.textContent = bits.filter(Boolean).join(" · ");
 }
+function anchorPathToCard(card){
+  if(!card || !card.dataset.slug) return false;
+  const i = BOOKS.findIndex(b => b[0] === card.dataset.slug);
+  if(i < 0) return false;
+  const nums = (card.dataset.ref || "").match(/\d+/g) || [];
+  const ch = nums.length >= 2 ? +nums[nums.length-2] : 1;
+  const endV = nums.length ? +nums[nums.length-1] : 1;
+  path = { i, ch, idx: endV };
+  save(LS.path, path);
+  lastSlug = card.dataset.slug;
+  seen.add(card.dataset.slug+":"+ch+":"+endV);
+  return true;
+}
 async function shareCurrent(){
   const card = visibleCard();
   if(!card || !card.dataset.ref) return;
@@ -283,9 +296,20 @@ saveBtn.addEventListener("click", toggleSave);
 document.getElementById("modes").addEventListener("click", (e)=>{
   const btn = e.target.closest("[data-mode]");
   if(!btn) return;
-  mode = btn.dataset.mode;
+  const next = btn.dataset.mode;
+  const prev = mode;
+  if(next === prev) return;
+  const card = visibleCard();
+  mode = next;
   save(LS.mode, mode);
   document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+  if(typeof syncPathChrome === "function") syncPathChrome();
+  if(next === "path" && card && anchorPathToCard(card)){
+    buffer = [];
+    label();
+    syncHeart();
+    return;
+  }
   if(mode === "saves" && !saves.length) flash("nothing saved");
   resetFeed();
 });
