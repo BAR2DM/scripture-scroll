@@ -60,7 +60,8 @@ function parseRef(ref){
 let back = null;
 let prepending = false;
 let touchY = 0;
-let touchTop = 0;
+let startCard = null;
+let settling = false;
 function armBack(card){
   const i = BOOKS.findIndex(function(b){ return b[0] === card.dataset.slug; });
   const p = parseRef(card.dataset.ref);
@@ -80,7 +81,7 @@ async function prependOne(){
   if(mode !== "path" || prepending || !back) return false;
   if(back.i <= 0 && back.ch <= 1 && back.before <= 0) return false;
   prepending = true;
-  const anchor = visibleCard();
+  const anchor = startCard && startCard.isConnected ? startCard : visibleCard();
   const beforeTop = anchor ? anchor.getBoundingClientRect().top : 0;
   try {
     let i = back.i, ch = back.ch, before = back.before;
@@ -125,15 +126,11 @@ async function continueFromCard(card){
   feed.scrollTop = card.offsetTop;
   feed.style.scrollSnapType = "";
 }
-function stepOne(dir){
-  const card = visibleCard();
-  if(!card) return;
-  const target = dir < 0 ? card.previousElementSibling : card.nextElementSibling;
-  if(!target){
-    if(dir < 0) prependOne();
-    return;
-  }
-  target.scrollIntoView({ behavior: "smooth", block: "start" });
+function goTo(node){
+  if(!node) return;
+  settling = true;
+  node.scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(function(){ settling = false; }, 450);
 }
 syncPathChrome();
 document.getElementById("modes").addEventListener("click", function(e){
@@ -173,24 +170,24 @@ document.getElementById("sheet").addEventListener("click", function(e){
 feed.addEventListener("touchstart", function(e){
   if(mode !== "path" || !e.touches[0]) return;
   touchY = e.touches[0].clientY;
-  touchTop = feed.scrollTop;
+  startCard = visibleCard();
 }, { passive: true });
 feed.addEventListener("touchend", function(e){
-  if(mode !== "path" || !e.changedTouches[0]) return;
+  if(mode !== "path" || !e.changedTouches[0] || !startCard || !startCard.isConnected) return;
   const dy = e.changedTouches[0].clientY - touchY;
-  if(Math.abs(dy) < 36) return;
-  if(Math.abs(feed.scrollTop - touchTop) > window.innerHeight * 0.85){
-    const card = visibleCard();
-    const backTo = dy > 0 ? card && card.previousElementSibling : card && card.nextElementSibling;
-    if(backTo) backTo.scrollIntoView({ behavior: "smooth", block: "start" });
-  } else {
-    stepOne(dy > 0 ? -1 : 1);
+  if(Math.abs(dy) < 28){
+    goTo(startCard);
+    return;
   }
+  const target = dy > 0 ? startCard.previousElementSibling : startCard.nextElementSibling;
+  if(target) goTo(target);
+  else if(dy > 0) prependOne().then(function(){ if(startCard.previousElementSibling) goTo(startCard.previousElementSibling); });
+  else goTo(startCard);
 }, { passive: true });
 feed.addEventListener("scroll", function(){
-  if(mode !== "path") return;
+  if(mode !== "path" || settling) return;
   const card = visibleCard();
-  if(card && !card.previousElementSibling && feed.scrollTop < 24) prependOne();
+  if(card && !card.previousElementSibling && feed.scrollTop < 8) prependOne();
 }, { passive: true });
 const _resetFeed = resetFeed;
 resetFeed = function(){
