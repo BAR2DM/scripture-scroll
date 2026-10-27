@@ -1,0 +1,1 @@
+$(cat /tmp/b64/james.jpg.b64)
