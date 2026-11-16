@@ -25,6 +25,42 @@ const BOOKS = [
   ["2-john","2 John",1],["3-john","3 John",1],["jude","Jude",1],
   ["revelation","Revelation",22]
 ];
+
+// Parables of Jesus in order of appearance in the Gospels
+const PARABLES = [
+  { slug:"matthew", name:"Matthew", ch:13, v:3, title:"The Sower" },
+  { slug:"matthew", name:"Matthew", ch:13, v:24, title:"The Weeds" },
+  { slug:"matthew", name:"Matthew", ch:13, v:31, title:"The Mustard Seed" },
+  { slug:"matthew", name:"Matthew", ch:13, v:33, title:"The Yeast" },
+  { slug:"matthew", name:"Matthew", ch:13, v:44, title:"The Hidden Treasure" },
+  { slug:"matthew", name:"Matthew", ch:13, v:45, title:"The Pearl" },
+  { slug:"matthew", name:"Matthew", ch:13, v:47, title:"The Net" },
+  { slug:"matthew", name:"Matthew", ch:18, v:12, title:"The Lost Sheep" },
+  { slug:"matthew", name:"Matthew", ch:18, v:23, title:"The Unforgiving Servant" },
+  { slug:"matthew", name:"Matthew", ch:20, v:1, title:"The Workers in the Vineyard" },
+  { slug:"matthew", name:"Matthew", ch:21, v:28, title:"The Two Sons" },
+  { slug:"matthew", name:"Matthew", ch:21, v:33, title:"The Wicked Tenants" },
+  { slug:"matthew", name:"Matthew", ch:22, v:2, title:"The Wedding Feast" },
+  { slug:"matthew", name:"Matthew", ch:24, v:32, title:"The Fig Tree" },
+  { slug:"matthew", name:"Matthew", ch:25, v:1, title:"The Ten Virgins" },
+  { slug:"matthew", name:"Matthew", ch:25, v:14, title:"The Talents" },
+  { slug:"matthew", name:"Matthew", ch:25, v:31, title:"The Sheep and the Goats" },
+  { slug:"mark", name:"Mark", ch:4, v:26, title:"The Growing Seed" },
+  { slug:"luke", name:"Luke", ch:10, v:30, title:"The Good Samaritan" },
+  { slug:"luke", name:"Luke", ch:11, v:5, title:"The Friend at Midnight" },
+  { slug:"luke", name:"Luke", ch:12, v:16, title:"The Rich Fool" },
+  { slug:"luke", name:"Luke", ch:13, v:6, title:"The Barren Fig Tree" },
+  { slug:"luke", name:"Luke", ch:14, v:16, title:"The Great Banquet" },
+  { slug:"luke", name:"Luke", ch:15, v:8, title:"The Lost Coin" },
+  { slug:"luke", name:"Luke", ch:15, v:11, title:"The Prodigal Son" },
+  { slug:"luke", name:"Luke", ch:16, v:1, title:"The Unjust Steward" },
+  { slug:"luke", name:"Luke", ch:16, v:19, title:"The Rich Man and Lazarus" },
+  { slug:"luke", name:"Luke", ch:18, v:2, title:"The Persistent Widow" },
+  { slug:"luke", name:"Luke", ch:18, v:10, title:"The Pharisee and the Tax Collector" },
+  { slug:"luke", name:"Luke", ch:19, v:12, title:"The Ten Minas" }
+];
+let parableIdx = load("ss_parable", 0);
+
 const BOOK_COVER = {"genesis":"photo-1441974230815-cc6e0d4b3b3a","exodus":"photo-1473580044384-7ba9967e16a0","leviticus":"photo-1518684079-3c830dcef090","numbers":"photo-1509316785289-025f5b846b35","deuteronomy":"photo-1469474968028-56623f02e42e","joshua":"photo-1506905925346-21bda4d32df4","judges":"photo-1464822759023-fed622ff2c3b","ruth":"photo-1464226184884-fa280b87c399","1-samuel":"photo-1482192505345-5656af4ab2b4","2-samuel":"photo-1470071459604-3b5ec3a7fe05","1-kings":"photo-1552832230-c0197dd311b5","2-kings":"photo-1542401889-2edc1e369b0c","1-chronicles":"photo-1500534314209-a25ddb2bd429","2-chronicles":"photo-1472214103451-9374bd1c798e","ezra":"photo-1514565131-fce0801d0b52","nehemiah":"photo-1511818966892-d7d671e672a2","esther":"photo-1519681393784-d120267933ba","job":"photo-1419242902214-272b3f66ee7a","psalms":"photo-1507525428034-b723cf961d3e","proverbs":"photo-1447752877765-59780d0d04f2","ecclesiastes":"photo-1493246507130-2bbda1f8871f","song-of-solomon":"photo-1462275646964-a0e33847b0a0","isaiah":"photo-1483728642387-6c3bdd17e60","jeremiah":"photo-1470116945706-e6bf5d5a76ca","lamentations":"photo-1478760329108-5c3ed9d495a0","ezekiel":"photo-1534445867742-43195f401b6c","daniel":"photo-1518837695005-2083093ee35b","hosea":"photo-1500530855697-b586d89ba3ee","joel":"photo-1502082553048-f009c37129b9","amos":"photo-1470252640268-40c871d0280a","obadiah":"photo-1426604966848-d7adac402bff","jonah":"photo-1439066619973-11c14eec78d1","micah":"photo-1501785888041-af3ef285b470","nahum":"photo-1475924156734-496f6cac6ec1","habakkuk":"photo-1418065460487-3e41a6c84dc5","zephaniah":"photo-1444080744255-d19ae4c5e38c","haggai":"photo-1482192505345-5656af4ab2b4","zechariah":"photo-1495616811223-4d98c6e9c869","malachi":"photo-1414609245224-afa02bfb3fda","matthew":"photo-1500534314209-a25ddb2bd429","mark":"photo-1507525428034-b723cf961d3e","luke":"photo-1464226184884-fa280b87c399","john":"photo-1419242902214-272b3f66ee7a","acts":"photo-1469474968028-56623f02e42e","romans":"photo-1473580044384-7ba9967e16a0","1-corinthians":"photo-1509316785289-025f5b846b35","2-corinthians":"photo-1506905925346-21bda4d32df4","galatians":"photo-1464822759023-fed622ff2c3b","ephesians":"photo-1519681393784-d120267933ba","philippians":"photo-1447752877765-59780d0d04f2","colossians":"photo-1472214103451-9374bd1c798e","1-thessalonians":"photo-1502082553048-f009c37129b9","2-thessalonians":"photo-1426604966848-d7adac402bff","1-timothy":"photo-1501785888041-af3ef285b470","2-timothy":"photo-1475924156734-496f6cac6ec1","titus":"photo-1418065460487-3e41a6c84dc5","philemon":"photo-1444080744255-d19ae4c5e38c","hebrews":"photo-1518684079-3c830dcef090","james":"photo-1470252640268-40c871d0280a","1-peter":"photo-1439066619973-11c14eec78d1","2-peter":"photo-1493246507130-2bbda1f8871f","1-john":"photo-1518837695005-2083093ee35b","2-john":"photo-1470116945706-e6bf5d5a76ca","3-john":"photo-1478760329108-5c3ed9d495a0","jude":"photo-1534445867742-43195f401b6c","revelation":"photo-1419242902214-272b3f66ee7a"};
 const MAX_SPAN = 5;
 const MOOD_BOOKS = {
@@ -173,6 +209,25 @@ async function fillBuffer(){
         saveCursor++;
         buffer.push(Object.assign({}, item, { badge:"saved" }));
         if(saveCursor > saves.length * 3) break;
+      }
+      loading = false;
+      return;
+    }
+    if(mode === "parables"){
+      while(buffer.length < 8 && parableIdx < PARABLES.length * 2){
+        const p = PARABLES[parableIdx % PARABLES.length];
+        parableIdx++;
+        save("ss_parable", parableIdx % PARABLES.length);
+        const verses = await fetchChapter(p.slug, p.ch);
+        if(!verses.length) continue;
+        const startIdx = Math.max(0, verses.findIndex(v => v.v >= p.v));
+        const span = completeSpan(verses, startIdx >= 0 ? startIdx : 0);
+        if(!span.text) continue;
+        const key = p.name+":"+p.ch+":"+span.v1+"-"+span.v2;
+        if(seen.has(key)) continue;
+        seen.add(key);
+        buffer.push(makeItem({ slug:p.slug, name:p.name, ch:p.ch }, span, { badge:p.title }));
+        if(parableIdx >= PARABLES.length * 2) break;
       }
       loading = false;
       return;
